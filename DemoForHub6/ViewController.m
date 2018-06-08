@@ -119,7 +119,7 @@ static inline float AngleFromNorth(CGPoint p1, CGPoint p2, BOOL flipped) {
     self = [super initWithCoder:coder];
     if (self) {
         self.radius = self.frame.size.width/2 - kLineWidth;
-        self.angle = 0;
+        self.angle = 90;
     }
     return self;
 }
@@ -127,7 +127,7 @@ static inline float AngleFromNorth(CGPoint p1, CGPoint p2, BOOL flipped) {
 - (void)drawRect:(CGRect)rect
 {
     [super drawRect:rect];
-        CGPoint point = [self pointFromAngle:self.angle];
+    CGPoint point = [self pointFromAngle:self.angle];
 
     
     UIBezierPath *path = [UIBezierPath bezierPathWithArcCenter:self.center radius:self.radius startAngle:0 endAngle:ToRad(self.angle) clockwise:YES];
@@ -191,12 +191,11 @@ static inline float AngleFromNorth(CGPoint p1, CGPoint p2, BOOL flipped) {
     self.imageLayer.shadowColor = [UIColor grayColor].CGColor;
     self.imageLayer.shadowOpacity = 0.8;
     self.imageLayer.shadowRadius = 10;
-    self.imageLayer.opacity = 0.9f;
     [self.layer addSublayer:self.imageLayer];
     
     [self.textLayer removeFromSuperlayer];
     self.textLayer = [CATextLayer layer];
-    self.textLayer.foregroundColor = [UIColor blackColor].CGColor;
+    self.textLayer.foregroundColor = [self colorOfPoint:CGPointMake(point.x+kLineWidth/2, point.y+kLineWidth/2)].CGColor;
     
     CFStringRef fontName = (__bridge CFStringRef)font.fontName;
     CGFontRef fontRef = CGFontCreateWithFontName(fontName);
@@ -206,6 +205,20 @@ static inline float AngleFromNorth(CGPoint p1, CGPoint p2, BOOL flipped) {
     self.textLayer.frame = CGRectMake(point.x + tempRect.size.width/2, point.y + tempRect.size.height/2 - 1.5, 20, 20);
     self.textLayer.string = tempStr;
     [self.layer addSublayer:self.textLayer];
+}
+
+
+- (UIColor *)colorOfPoint:(CGPoint)point {
+    unsigned char pixel[4] = {0};
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(pixel, 1, 1, 8, 4, colorSpace, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGContextTranslateCTM(context, -point.x, -point.y);
+    
+    [self.gradientLayer renderInContext:context];
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    UIColor *color = [UIColor colorWithRed:pixel[0]/255.0 green:pixel[1]/255.0 blue:pixel[2]/255.0 alpha:pixel[3]/255.0];
+    return color;
 }
 
 -(BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event{
